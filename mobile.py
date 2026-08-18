@@ -1,45 +1,29 @@
-
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, send_file
+import requests
+import io
 import os
-import uuid
-import yt_dlp
-
-# ============================================================
-# PATHS RFGSDFGSDFGSDEFGSDEFGSDFGSDEFGSEDFG
-# ============================================================
-
-BASE_DIR = os.path.dirname(
-    os.path.abspath(__file__)
-)
-
-TEMPLATE_FOLDER = os.path.join(
-    BASE_DIR,
-    "templates"
-)
-
-DOWNLOAD_FOLDER = os.path.join(
-    BASE_DIR,
-    "downloads"
-)
-
-COOKIE_FILE = os.path.join(
-    BASE_DIR,
-    "cookies.txt"
-)
-
-os.makedirs(
-    DOWNLOAD_FOLDER,
-    exist_ok=True
-)
+import traceback
 
 
 # ============================================================
 # FLASK APP
 # ============================================================
 
-app = Flask(
-    __name__,
-    template_folder=TEMPLATE_FOLDER
+app = Flask(__name__)
+
+
+# ============================================================
+# PC DOWNLOADER
+# ============================================================
+
+DOWNLOADER_URL = os.environ.get(
+    "DOWNLOADER_URL",
+    ""
+).rstrip("/")
+
+DOWNLOADER_API_KEY = os.environ.get(
+    "DOWNLOADER_API_KEY",
+    ""
 )
 
 
@@ -47,7 +31,7 @@ app = Flask(
 # HOME
 # ============================================================
 
-@app.route("/", methods=["GET"])
+@app.route("/")
 def home():
 
     return render_template(
@@ -56,17 +40,18 @@ def home():
 
 
 # ============================================================
-# PROCESS YOUTUBE URL
+# PROCESS
 # ============================================================
 
-@app.route("/process", methods=["POST"])
+@app.route(
+    "/process",
+    methods=["POST"]
+)
 def process():
 
-    url = str(
-        request.form.get(
-            "url",
-            ""
-        )
+    url = request.form.get(
+        "url",
+        ""
     ).strip()
 
     if not url:
@@ -76,61 +61,18 @@ def process():
             error="Please enter a YouTube URL."
         )
 
-    try:
-
-        options = {
-
-            "quiet": True,
-
-            "no_warnings": True,
-
-            "noplaylist": True,
-
-            "cookiefile": COOKIE_FILE
-
-        }
-
-        with yt_dlp.YoutubeDL(
-            options
-        ) as ydl:
-
-            info = ydl.extract_info(
-                url,
-                download=False
-            )
-
-        title = info.get(
-            "title",
-            "Unknown video"
-        )
-
-        return render_template(
-            "mobile_video.html",
-            title=title,
-            url=url
-        )
-
-    except Exception as e:
-
-        print(
-            "PROCESS ERROR:"
-        )
-
-        print(
-            repr(e)
-        )
-
-        return render_template(
-            "mobile_index.html",
-            error=str(e)
-        )
+    return render_template(
+        "mobile_video.html",
+        title="YouTube Video",
+        url=url
+    )
 
 
 # ============================================================
-# DOWNLOAD WAIT PAGE
+# WAIT PAGE
 # ============================================================
 
-@app.route("/wait", methods=["GET"])
+@app.route("/wait")
 def wait():
 
     url = request.args.get(
@@ -147,7 +89,7 @@ def wait():
 
         return render_template(
             "mobile_index.html",
-            error="Missing YouTube URL."
+            error="Missing video URL."
         )
 
     return render_template(
@@ -161,7 +103,10 @@ def wait():
 # DOWNLOAD
 # ============================================================
 
-@app.route("/download", methods=["POST"])
+@app.route(
+    "/download",
+    methods=["POST"]
+)
 def download():
 
     url = request.form.get(
@@ -176,12 +121,38 @@ def download():
 
     if not url:
 
-        return jsonify({
+        return (
+            "Invalid request.",
+            400
+        )
 
-            "error":
-                "Missing YouTube URL"
 
-        }), 400
+    # --------------------------------------------------------
+    # CHECK DOWNLOADER CONFIG
+    # --------------------------------------------------------
+
+    if not DOWNLOADER_URL:
+
+        print(
+            "ERROR: DOWNLOADER_URL is not configured."
+        )
+
+        return (
+            "Downloader service is not configured.",
+            500
+        )
+
+
+    if not DOWNLOADER_API_KEY:
+
+        print(
+            "ERROR: DOWNLOADER_API_KEY is not configured."
+        )
+
+        return (
+            "Downloader API key is not configured.",
+            500
+        )
 
 
     # --------------------------------------------------------
@@ -213,66 +184,21 @@ def download():
 
 
     # --------------------------------------------------------
-    # UNIQUE FILE
+    # DOWNLOADER ENDPOINT
     # --------------------------------------------------------
 
-    filename = str(
-        uuid.uuid4()
+    endpoint = (
+        DOWNLOADER_URL
+        + "/download"
     )
 
-    output_template = os.path.join(
-
-        DOWNLOAD_FOLDER,
-
-        filename + ".%(ext)s"
-
-    )
-
-
-    # --------------------------------------------------------
-    # YT-DLP OPTIONS
-    # --------------------------------------------------------
-
-    options = {
-
-        "format":
-            f"bestvideo[height<={height}][ext=mp4]+"
-            f"bestaudio[ext=m4a]/"
-            f"best[height<={height}][ext=mp4]/"
-            f"best[height<={height}]/"
-            "18",
-
-        "outtmpl":
-            output_template,
-
-        "merge_output_format":
-            "mp4",
-
-        "noplaylist":
-            True,
-
-        "cookiefile":
-            COOKIE_FILE,
-
-        "quiet":
-            False,
-
-        "no_warnings":
-            False
-
-    }
-
-
-    # --------------------------------------------------------
-    # LOG
-    # --------------------------------------------------------
 
     print(
         "========================================"
     )
 
     print(
-        "MOBILE DOWNLOAD REQUEST"
+        "REMOTE DOWNLOAD"
     )
 
     print(
@@ -286,27 +212,8 @@ def download():
     )
 
     print(
-        "COOKIE FILE:",
-        COOKIE_FILE
-    )
-
-    print(
-        "COOKIE EXISTS:",
-        os.path.exists(
-            COOKIE_FILE
-        )
-    )
-
-    print(
-        "TEMPLATE FOLDER:",
-        TEMPLATE_FOLDER
-    )
-
-    print(
-        "TEMPLATE FOLDER EXISTS:",
-        os.path.exists(
-            TEMPLATE_FOLDER
-        )
+        "DOWNLOADER:",
+        DOWNLOADER_URL
     )
 
     print(
@@ -315,116 +222,151 @@ def download():
 
 
     # --------------------------------------------------------
-    # DOWNLOAD
+    # REQUEST TO PC DOWNLOADER
     # --------------------------------------------------------
 
     try:
 
-        with yt_dlp.YoutubeDL(
-            options
-        ) as ydl:
+        response = requests.post(
 
-            ydl.download([
-                url
-            ])
+            endpoint,
 
+            headers={
+                "Authorization":
+                    "Bearer "
+                    + DOWNLOADER_API_KEY
+            },
 
-        # ----------------------------------------------------
-        # FIND DOWNLOADED FILE
-        # ----------------------------------------------------
+            json={
+                "url": url,
+                "quality": height
+            },
 
-        files = [
-
-            f
-
-            for f in os.listdir(
-                DOWNLOAD_FOLDER
-            )
-
-            if f.startswith(
-                filename + "."
-            )
-
-        ]
-
-
-        if not files:
-
-            print(
-                "OUTPUT FILE NOT FOUND"
-            )
-
-            return jsonify({
-
-                "error":
-                    "Downloaded file was not found."
-
-            }), 500
-
-
-        # ----------------------------------------------------
-        # PREFER MP4
-        # ----------------------------------------------------
-
-        mp4_files = [
-
-            f
-
-            for f in files
-
-            if f.lower().endswith(
-                ".mp4"
-            )
-
-        ]
-
-
-        if mp4_files:
-
-            final_file = (
-                mp4_files[0]
-            )
-
-        else:
-
-            final_file = (
-                files[0]
-            )
-
-
-        # ----------------------------------------------------
-        # FULL PATH
-        # ----------------------------------------------------
-
-        filepath = os.path.join(
-
-            DOWNLOAD_FOLDER,
-
-            final_file
+            timeout=900
 
         )
 
 
         print(
-            "FILE READY:",
-            filepath
+            "DOWNLOADER STATUS:",
+            response.status_code
         )
 
 
         # ----------------------------------------------------
-        # SEND FILE
+        # SUCCESS
         # ----------------------------------------------------
 
-        return send_file(
+        if response.status_code == 200:
 
-            filepath,
+            print(
+                "DOWNLOAD SUCCESS"
+            )
 
-            as_attachment=True,
+            content_type = (
+                response.headers.get(
+                    "Content-Type",
+                    "video/mp4"
+                )
+            )
 
-            download_name="video.mp4"
+
+            return send_file(
+
+                io.BytesIO(
+                    response.content
+                ),
+
+                mimetype=content_type,
+
+                as_attachment=True,
+
+                download_name="video.mp4"
+
+            )
+
+
+        # ----------------------------------------------------
+        # ERROR FROM PC DOWNLOADER
+        # ----------------------------------------------------
+
+        try:
+
+            error_data = response.json()
+
+            error_message = error_data.get(
+                "error",
+                "Downloader failed."
+            )
+
+        except Exception:
+
+            error_message = (
+                response.text
+                or "Downloader failed."
+            )
+
+
+        print(
+            "DOWNLOADER ERROR:"
+        )
+
+        print(
+            error_message
+        )
+
+
+        return (
+
+            "Download failed: "
+            + error_message,
+
+            response.status_code
+            if response.status_code >= 400
+            else 500
 
         )
 
+
+    # --------------------------------------------------------
+    # TIMEOUT
+    # --------------------------------------------------------
+
+    except requests.exceptions.Timeout:
+
+        print(
+            "DOWNLOADER TIMEOUT"
+        )
+
+        return (
+            "The downloader took too long to respond.",
+            504
+        )
+
+
+    # --------------------------------------------------------
+    # CONNECTION ERROR
+    # --------------------------------------------------------
+
+    except requests.exceptions.ConnectionError as e:
+
+        print(
+            "DOWNLOADER CONNECTION ERROR"
+        )
+
+        print(
+            repr(e)
+        )
+
+        return (
+            "Could not connect to the PC downloader.",
+            502
+        )
+
+
+    # --------------------------------------------------------
+    # OTHER ERROR
+    # --------------------------------------------------------
 
     except Exception as e:
 
@@ -433,7 +375,7 @@ def download():
         )
 
         print(
-            "MOBILE DOWNLOAD ERROR"
+            "DOWNLOAD ERROR"
         )
 
         print(
@@ -444,136 +386,50 @@ def download():
             "========================================"
         )
 
-        return jsonify({
+        traceback.print_exc()
 
-            "error":
-                str(e)
-
-        }), 500
+        return (
+            "Download failed: "
+            + str(e),
+            500
+        )
 
 
 # ============================================================
 # HEALTH
 # ============================================================
 
-@app.route(
-    "/health",
-    methods=["GET"]
-)
+@app.route("/health")
 def health():
 
-    return jsonify({
+    return {
 
-        "status":
-            "ok",
+        "status": "ok",
 
-        "service":
-            "YTTool Mobile",
+        "downloader":
+            DOWNLOADER_URL != ""
 
-        "base_dir":
-            BASE_DIR,
-
-        "templates":
-            os.path.exists(
-                TEMPLATE_FOLDER
-            ),
-
-        "mobile_index":
-            os.path.exists(
-                os.path.join(
-                    TEMPLATE_FOLDER,
-                    "mobile_index.html"
-                )
-            ),
-
-        "mobile_wait":
-            os.path.exists(
-                os.path.join(
-                    TEMPLATE_FOLDER,
-                    "mobile_wait.html"
-                )
-            ),
-
-        "mobile_video":
-            os.path.exists(
-                os.path.join(
-                    TEMPLATE_FOLDER,
-                    "mobile_video.html"
-                )
-            )
-
-    })
+    }
 
 
 # ============================================================
-# START SERVER
+# LOCAL DEVELOPMENT
 # ============================================================
 
 if __name__ == "__main__":
-
-    print(
-        "========================================"
-    )
-
-    print(
-        "YTTOOL MOBILE SERVER"
-    )
-
-    print(
-        "BASE DIR:",
-        BASE_DIR
-    )
-
-    print(
-        "TEMPLATE FOLDER:",
-        TEMPLATE_FOLDER
-    )
-
-    print(
-        "MOBILE INDEX EXISTS:",
-        os.path.exists(
-            os.path.join(
-                TEMPLATE_FOLDER,
-                "mobile_index.html"
-            )
-        )
-    )
-
-    print(
-        "MOBILE WAIT EXISTS:",
-        os.path.exists(
-            os.path.join(
-                TEMPLATE_FOLDER,
-                "mobile_wait.html"
-            )
-        )
-    )
-
-    print(
-        "MOBILE VIDEO EXISTS:",
-        os.path.exists(
-            os.path.join(
-                TEMPLATE_FOLDER,
-                "mobile_video.html"
-            )
-        )
-    )
-
-    print(
-        "DOWNLOAD FOLDER:",
-        DOWNLOAD_FOLDER
-    )
-
-    print(
-        "========================================"
-    )
 
     app.run(
 
         host="0.0.0.0",
 
-        port=5002,
+        port=int(
+            os.environ.get(
+                "PORT",
+                5000
+            )
+        ),
 
-        debug=False
+        debug=True
 
     )
+
