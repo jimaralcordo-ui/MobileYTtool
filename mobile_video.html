@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Video Found - YTTool</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+
+            margin: 0;
+
+            min-height: 100vh;
+
+            background: #0f172a;
+
+            color: white;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            padding: 20px;
+
+        }
+
+        .container {
+
+            width: 100%;
+
+            max-width: 600px;
+
+        }
+
+        .card {
+
+            background: #1e293b;
+
+            padding: 28px;
+
+            border-radius: 18px;
+
+            box-shadow:
+                0 20px 50px
+                rgba(0, 0, 0, 0.35);
+
+        }
+
+        h1 {
+
+            text-align: center;
+
+            margin-top: 0;
+
+            margin-bottom: 10px;
+
+        }
+
+        .status {
+
+            text-align: center;
+
+            color: #22c55e;
+
+            font-weight: bold;
+
+            margin-bottom: 25px;
+
+        }
+
+        .title {
+
+            background: #0f172a;
+
+            padding: 15px;
+
+            border-radius: 9px;
+
+            color: #e2e8f0;
+
+            margin-bottom: 25px;
+
+            line-height: 1.5;
+
+            word-break: break-word;
+
+        }
+
+        label {
+
+            display: block;
+
+            color: #cbd5e1;
+
+            margin-bottom: 8px;
+
+        }
+
+        select {
+
+            width: 100%;
+
+            padding: 14px;
+
+            border-radius: 9px;
+
+            border: 1px solid #475569;
+
+            background: #0f172a;
+
+            color: white;
+
+            font-size: 16px;
+
+        }
+
+        button {
+
+            width: 100%;
+
+            margin-top: 18px;
+
+            padding: 15px;
+
+            border: none;
+
+            border-radius: 9px;
+
+            background: #2563eb;
+
+            color: white;
+
+            font-size: 16px;
+
+            font-weight: bold;
+
+            cursor: pointer;
+
+        }
+
+        button:hover {
+
+            background: #1d4ed8;
+
+        }
+
+        .note {
+
+            text-align: center;
+
+            color: #94a3b8;
+
+            font-size: 13px;
+
+            margin-top: 18px;
+
+            line-height: 1.5;
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+    <main class="container">
+
+        <section class="card">
+
+            <h1>
+                Video Found
+            </h1>
+
+            <div class="status">
+                ✓ Video information found
+            </div>
+
+
+            <div class="title">
+
+                <strong>
+                    Title:
+                </strong>
+
+                <br>
+
+                {{ title }}
+
+            </div>
+
+
+            <form
+                action="/wait"
+                method="GET"
+            >
+
+                <input
+                    type="hidden"
+                    name="url"
+                    value="{{ url }}"
+                >
+
+
+                <label for="quality">
+
+                    Select quality
+
+                </label>
+
+
+                <select
+                    id="quality"
+                    name="quality"
+                >
+
+                    <option value="360">
+                        360p
+                    </option>
+
+                    <option value="480">
+                        480p
+                    </option>
+
+                    <option value="720" selected>
+                        720p HD
+                    </option>
+
+                    <option value="1080">
+                        1080p Full HD
+                    </option>
+
+                </select>
+
+
+                <button type="submit">
+
+                    Continue
+
+                </button>
+
+            </form>
+
+
+            <p class="note">
+
+                Select your preferred video quality
+                and continue.
+
+            </p>
+
+        </section>
+
+    </main>
+
+</body>
+
+</html>

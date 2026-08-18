@@ -1,0 +1,8 @@
+@"
+cookies.txt
+downloads/
+venv/
+__pycache__/
+*.pyc
+.env
+"@ | Set-Content .gitignore
