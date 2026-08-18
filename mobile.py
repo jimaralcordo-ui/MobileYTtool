@@ -1,25 +1,20 @@
+
 from flask import Flask, render_template, request, jsonify, send_file
 import os
 import uuid
 import yt_dlp
 
-
 # ============================================================
-# FLASK APP
-# ============================================================
-
-app = Flask(
-    __name__,
-    template_folder=r"C:\Users\Amoe\Desktop\yt-tool\templates"
-)
-
-
-# ============================================================
-# PATHS
+# PATHS RFGSDFGSDFGSDEFGSDEFGSDFGSDEFGSEDFG
 # ============================================================
 
 BASE_DIR = os.path.dirname(
     os.path.abspath(__file__)
+)
+
+TEMPLATE_FOLDER = os.path.join(
+    BASE_DIR,
+    "templates"
 )
 
 DOWNLOAD_FOLDER = os.path.join(
@@ -35,6 +30,16 @@ COOKIE_FILE = os.path.join(
 os.makedirs(
     DOWNLOAD_FOLDER,
     exist_ok=True
+)
+
+
+# ============================================================
+# FLASK APP
+# ============================================================
+
+app = Flask(
+    __name__,
+    template_folder=TEMPLATE_FOLDER
 )
 
 
@@ -293,6 +298,18 @@ def download():
     )
 
     print(
+        "TEMPLATE FOLDER:",
+        TEMPLATE_FOLDER
+    )
+
+    print(
+        "TEMPLATE FOLDER EXISTS:",
+        os.path.exists(
+            TEMPLATE_FOLDER
+        )
+    )
+
+    print(
         "========================================"
     )
 
@@ -453,20 +470,35 @@ def health():
         "service":
             "YTTool Mobile",
 
+        "base_dir":
+            BASE_DIR,
+
         "templates":
             os.path.exists(
-                os.path.join(
-                    BASE_DIR,
-                    "templates"
-                )
+                TEMPLATE_FOLDER
             ),
 
         "mobile_index":
             os.path.exists(
                 os.path.join(
-                    BASE_DIR,
-                    "templates",
+                    TEMPLATE_FOLDER,
                     "mobile_index.html"
+                )
+            ),
+
+        "mobile_wait":
+            os.path.exists(
+                os.path.join(
+                    TEMPLATE_FOLDER,
+                    "mobile_wait.html"
+                )
+            ),
+
+        "mobile_video":
+            os.path.exists(
+                os.path.join(
+                    TEMPLATE_FOLDER,
+                    "mobile_video.html"
                 )
             )
 
@@ -494,19 +526,35 @@ if __name__ == "__main__":
 
     print(
         "TEMPLATE FOLDER:",
-        os.path.join(
-            BASE_DIR,
-            "templates"
-        )
+        TEMPLATE_FOLDER
     )
 
     print(
         "MOBILE INDEX EXISTS:",
         os.path.exists(
             os.path.join(
-                BASE_DIR,
-                "templates",
+                TEMPLATE_FOLDER,
                 "mobile_index.html"
+            )
+        )
+    )
+
+    print(
+        "MOBILE WAIT EXISTS:",
+        os.path.exists(
+            os.path.join(
+                TEMPLATE_FOLDER,
+                "mobile_wait.html"
+            )
+        )
+    )
+
+    print(
+        "MOBILE VIDEO EXISTS:",
+        os.path.exists(
+            os.path.join(
+                TEMPLATE_FOLDER,
+                "mobile_video.html"
             )
         )
     )
